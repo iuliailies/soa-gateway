@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -38,8 +37,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
             http.Error(w, "Invalid token claims", http.StatusUnauthorized)
             return
         }
-
-        fmt.Println("Hello World!", userID)
         
         ctx := context.WithValue(r.Context(), userIDKey, int(userID))
         next.ServeHTTP(w, r.WithContext(ctx))
