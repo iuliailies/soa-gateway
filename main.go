@@ -49,7 +49,7 @@ func main() {
 
 		// Proxy routes to the backend
 		api.Handle("/expenses", backendProxy)
-		api.Handle("/users/*", backendProxy)
+		api.Handle("/users/limit", backendProxy)
 	})
 
 	log.Println("Starting gateway on :8080")
