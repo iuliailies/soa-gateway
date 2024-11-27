@@ -42,6 +42,7 @@ func main() {
 
 	// Public route for login
 	r.Post("/auth/login", Login)
+	r.Get("/auth/logout", LogoutHandler)
 
 	// Protected routes
 	r.Route("/api", func(api chi.Router) {
@@ -49,6 +50,7 @@ func main() {
 
 		// Proxy routes to the backend
 		api.Handle("/expenses", backendProxy)
+		api.Handle("/expenses/*", backendProxy)
 		api.Handle("/users/limit", backendProxy)
 	})
 

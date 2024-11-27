@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -11,6 +13,40 @@ import (
 type contextKey string
 
 const userIDKey = contextKey("user_id")
+
+// Blocklist structure to store invalidated tokens
+type Blocklist struct {
+	mu       sync.Mutex
+	tokens   map[string]time.Time // token -> expiration time
+}
+
+var blocklist = Blocklist{
+	tokens: make(map[string]time.Time),
+}
+
+func (b *Blocklist) Add(token string, expiration time.Time) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.tokens[token] = expiration
+}
+
+func (b *Blocklist) IsBlocked(token string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	expiration, exists := b.tokens[token]
+	if !exists {
+		return false
+	}
+
+	// If the expiration time has passed, remove the token
+	if time.Now().After(expiration) {
+		delete(b.tokens, token)
+		return false
+	}
+
+	return true
+}
 
 // AuthMiddleware validates JWT and sets user ID in request context
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -31,7 +67,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
             return
         }
 
-        // Extract user ID from claims and add it to the context // TODO: what is a contetx?
+        // Check if the token is in the blocklist
+		if blocklist.IsBlocked(tokenString) {
+			http.Error(w, "Unauthorized: token is invalidated", http.StatusUnauthorized)
+			return
+		}
+
+        // Extract user ID from claims and add it to the context
         userID, ok := claims["user_id"].(float64)
         if !ok {
             http.Error(w, "Invalid token claims", http.StatusUnauthorized)

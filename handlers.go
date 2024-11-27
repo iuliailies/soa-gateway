@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -76,4 +77,38 @@ func generateJWT(userID int) (string, error) {
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     return token.SignedString(JWTSecretKey)
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+        if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+            http.Error(w, "Missing or invalid token", http.StatusUnauthorized)
+            return
+        }
+
+    tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Parse the token to extract expiration time
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return []byte(JWTSecretKey), nil
+	})
+	if err != nil || !token.Valid {
+		http.Error(w, "Bad Request: invalid token", http.StatusBadRequest)
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		http.Error(w, "Bad Request: invalid claims", http.StatusBadRequest)
+		return
+	}
+
+	// Extract expiration time
+	exp := int64(claims["exp"].(float64))
+	expirationTime := time.Unix(exp, 0)
+
+	blocklist.Add(tokenStr, expirationTime)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Successfully logged out"))
 }
