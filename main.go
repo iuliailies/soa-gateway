@@ -20,8 +20,8 @@ func main() {
 	}
 
 	// Base URL for the backend microservice
-    backendURL := "http://localhost:8081"
-	// backendURL := "http://host.docker.internal:8081"
+    // backendURL := "http://localhost:8081"
+	backendURL := "http://host.docker.internal:8081"
 
 	// Create a reverse proxy for the backend
 	backendProxy := newReverseProxy(backendURL)

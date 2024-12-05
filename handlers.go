@@ -51,8 +51,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 // authenticateWithExpensesMicroservice sends the email and password to the auth microservice
 func authenticateWithExpensesMicroservice(creds Credentials) (*AuthResponse, error) {
-    expensesMicroserviceUrl := "http://localhost:8081/auth/login" 
-    // expensesMicroserviceUrl := "http://host.docker.internal:8081/auth/login" 
+    // expensesMicroserviceUrl := "http://localhost:8081/auth/login" 
+    expensesMicroserviceUrl := "http://host.docker.internal:8081/auth/login" 
     
 
     reqBody, _ := json.Marshal(creds)
